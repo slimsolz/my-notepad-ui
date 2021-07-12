@@ -1,57 +1,136 @@
 import { useState, useRef, useEffect } from "react";
+import { useMutation, useQuery } from "react-query";
 import { DeleteForever } from "@material-ui/icons";
+import Swal from "sweetalert2";
 import classes from "./Note.module.scss";
 import SideBar from "../Sidebar/SideBar";
-
-const items = [
-  {
-    id: 0,
-    title:
-      "title goes here 0 title goes here 0 title goes here 0  title goes here 0",
-  },
-  { id: 1, title: "title goes here 1" },
-  { id: 2, title: "title goes here 2" },
-  { id: 3, title: "title goes here 3" },
-];
+import Services from "./services";
 
 const Note = ({ isNew, setNew }) => {
+  const [pageNo, setPageNo] = useState(1);
   const [content, setContent] = useState({
     id: null,
-    title: "",
+    content: "",
   });
-  const [listItems, setListItems] = useState(items);
+  const [listItems, setListItems] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
   const reference = useRef(content);
+
+  const { isLoading, isError, error, refetch } = useQuery(
+    ["notes", pageNo],
+    Services.getAllNotes,
+    {
+      refetchOnWindowFocus: false,
+      onSuccess: (data) => {
+        const {
+          data: { notes },
+        } = data;
+        setListItems(notes);
+      },
+    }
+  );
+
+  const [saveNote, { isLoading: isSaving }] = useMutation(Services.saveNote, {
+    onSuccess: (data, variables, context) => {
+      refetch();
+    },
+    onError: (error, variables, context) => {
+      setErrorMessage(error.message);
+    },
+  });
+
+  const [updateNote, { isLoading: isUpdating }] = useMutation(
+    Services.updateNote,
+    {
+      onSuccess: (data, variables, context) => {
+        refetch();
+      },
+      onError: (error, variables, context) => {
+        setErrorMessage(error.message);
+      },
+    }
+  );
+
+  const [deleteNote, { isLoading: isDeleting }] = useMutation(
+    Services.deleteNote,
+    {
+      onSuccess: (data, variables, context) => {
+        setContent({
+          id: null,
+          content: "",
+        });
+        refetch();
+      },
+      onError: (error, variables, context) => {
+        setErrorMessage(error.message);
+      },
+    }
+  );
 
   const onView = (id) => {
     if (isNew) {
       setNew(false);
     }
-    setContent({
-      id,
-      title: listItems[id].title,
-    });
-    console.log({
-      id,
-      title: listItems[id].title,
-    });
+
+    const content = listItems.filter((list) => list._id === id)[0];
+    setContent(content);
   };
 
   const onSave = (id) => {
     const divElement = reference.current;
-    const content = {
-      id: id || listItems.length,
-      title: divElement.innerText,
+    const payload = {
+      id: id,
+      content: divElement.innerText,
     };
 
     if (id) {
-      const index = listItems.findIndex((list) => list.id === id);
-      listItems.splice(index, 1, content);
+      updateNote(payload);
     } else {
-      listItems.push(content);
+      saveNote(payload);
     }
-
-    setListItems(listItems);
   };
+
+  const onRemove = (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You will not be able to recover this",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "No, keep it",
+      confirmButtonColor: "red",
+    }).then(async (result) => {
+      if (result.value) {
+        const res = await deleteNote(id);
+        res === 204
+          ? Swal.fire({
+              title: "Deleted!",
+              text: "Successfully deleted",
+              icon: "success",
+              confirmButtonColor: "red",
+            })
+          : Swal.fire({
+              title: "Cancelled",
+              text: "Could not delete, please try again",
+              icon: "error",
+              confirmButtonColor: "red",
+            });
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        Swal.fire({
+          title: "Cancelled",
+          text: "Delete cancelled",
+          icon: "error",
+          confirmButtonColor: "red",
+        });
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (isError) {
+      // toast(error.response ? error.response.statusText : error.message);
+    }
+  }, [isError, error]);
 
   useEffect(() => {
     if (isNew) {
@@ -72,24 +151,28 @@ const Note = ({ isNew, setNew }) => {
         <div
           className={classes.Note__main}
           ref={reference}
-          contentEditable={isNew || content.title !== ""}
+          contentEditable={isNew || content.content !== ""}
           suppressContentEditableWarning={true}
         >
-          {content.title}
+          {content.content}
         </div>
         <div
           className={`${classes.Note__btnContainer} ${
-            (isNew || content.title) && classes.Note__showBtn
+            (isNew || content.content) && classes.Note__showBtn
           }`}
         >
-          {content.title && (
-            <DeleteForever className={classes.Note__btnDelete} />
+          {content.content && (
+            <DeleteForever
+              className={classes.Note__btnDelete}
+              onClick={() => onRemove(content._id)}
+            />
           )}
           <button
             className={classes.Note__btnSave}
-            onClick={() => onSave(content.id)}
+            onClick={() => onSave(content._id)}
+            disabled={isSaving || isUpdating || isDeleting}
           >
-            save
+            {content._id ? "update" : "save"}
           </button>
         </div>
       </div>

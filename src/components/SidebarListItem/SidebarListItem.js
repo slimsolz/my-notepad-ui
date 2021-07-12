@@ -1,8 +1,8 @@
 import { getTitle } from "../../utils";
 import classes from "./SidebarListItem.module.scss";
 
-const SidebarListItem = ({ id, title, isActive, click }) => {
-  const menuTitle = getTitle(title);
+const SidebarListItem = ({ id, content, isActive, click }) => {
+  const menuTitle = getTitle(content);
 
   return (
     <li
