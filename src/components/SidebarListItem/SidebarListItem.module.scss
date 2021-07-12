@@ -1,0 +1,14 @@
+.SidebarListItem {
+  padding: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #1d3557;
+  height: 30px;
+}
+
+.Active,
+.SidebarListItem:hover {
+  background-color: rgb(217, 217, 220);
+}

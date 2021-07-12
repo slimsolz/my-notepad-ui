@@ -1,0 +1,22 @@
+.Header {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgb(213, 211, 211);
+  padding: 0 10px;
+
+  &__iconContainer {
+    flex: 0.1;
+  }
+
+  &__icon {
+    font-size: 30px !important;
+    cursor: pointer;
+  }
+
+  &__title {
+    text-transform: capitalize;
+    flex: 0.9;
+    text-align: center;
+  }
+}
