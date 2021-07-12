@@ -1,4 +1,18 @@
 .SideBar {
-  list-style: none;
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+
+  &__list {
+    list-style: none;
+    padding: 0;
+    overflow-y: scroll;
+  }
+
+  &__tablePagination {
+    padding: 10px 0;
+    display: flex;
+    justify-content: center;
+  }
 }

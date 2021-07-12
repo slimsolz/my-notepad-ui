@@ -8,27 +8,29 @@ import Services from "./services";
 
 const Note = ({ isNew, setNew }) => {
   const [pageNo, setPageNo] = useState(1);
+  const [pageDetail, setPageDetail] = useState({});
   const [content, setContent] = useState({
     id: null,
     content: "",
   });
+
   const [listItems, setListItems] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const reference = useRef(content);
 
-  const { isLoading, isError, error, refetch } = useQuery(
-    ["notes", pageNo],
-    Services.getAllNotes,
-    {
-      refetchOnWindowFocus: false,
-      onSuccess: (data) => {
-        const {
-          data: { notes },
-        } = data;
-        setListItems(notes);
-      },
-    }
-  );
+  const { refetch } = useQuery(["notes", pageNo], Services.getAllNotes, {
+    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      const {
+        data: { notes, pageDetails },
+      } = data;
+      setListItems(notes);
+      setPageDetail(pageDetails);
+    },
+    onError: (error) => {
+      setErrorMessage(error.message);
+    },
+  });
 
   const [saveNote, { isLoading: isSaving }] = useMutation(Services.saveNote, {
     onSuccess: (data, variables, context) => {
@@ -82,6 +84,7 @@ const Note = ({ isNew, setNew }) => {
       id: id,
       content: divElement.innerText,
     };
+    showError("");
 
     if (id) {
       updateNote(payload);
@@ -126,11 +129,18 @@ const Note = ({ isNew, setNew }) => {
     });
   };
 
+  const showError = (error) => {
+    Swal.fire({
+      title: "Cancelled",
+      text: error,
+      icon: "error",
+      confirmButtonColor: "red",
+    });
+  };
+
   useEffect(() => {
-    if (isError) {
-      // toast(error.response ? error.response.statusText : error.message);
-    }
-  }, [isError, error]);
+    if (errorMessage) showError(errorMessage);
+  }, [errorMessage]);
 
   useEffect(() => {
     if (isNew) {
@@ -145,7 +155,13 @@ const Note = ({ isNew, setNew }) => {
   return (
     <div className={classes.Note}>
       <div className={classes.Note__sidebar}>
-        <SideBar clicked={onView} listItems={listItems} />
+        <SideBar
+          clicked={onView}
+          listItems={listItems}
+          totalCount={pageDetail.totalPages}
+          onChange={setPageNo}
+          currentPage={pageNo}
+        />
       </div>
       <div className={classes.Note__mainContainer}>
         <div

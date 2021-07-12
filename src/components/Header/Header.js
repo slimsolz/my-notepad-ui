@@ -4,7 +4,6 @@ import { Add } from "@material-ui/icons";
 const Header = ({ setIsNew }) => {
   const addNewNote = () => {
     setIsNew(true);
-    console.log("clicked");
   };
 
   return (
