@@ -130,12 +130,14 @@ const Note = ({ isNew, setNew }) => {
   };
 
   const showError = (error) => {
-    Swal.fire({
-      title: "Cancelled",
-      text: error,
-      icon: "error",
-      confirmButtonColor: "red",
-    });
+    if (error) {
+      Swal.fire({
+        title: "Cancelled",
+        text: error,
+        icon: "error",
+        confirmButtonColor: "red",
+      });
+    }
   };
 
   useEffect(() => {
